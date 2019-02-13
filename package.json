@@ -1,0 +1,25 @@
+{
+  "name": "att",
+  "version": "1.0.0",
+  "description": "blood tube automation",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yokeap/att.git"
+  },
+  "author": "S.Sukprasertchai",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/yokeap/att/issues"
+  },
+  "homepage": "https://github.com/yokeap/att#readme",
+  "dependencies": {
+    "bower": "^1.8.8",
+    "express": "^4.16.4",
+    "promise": "^8.0.2",
+    "socket.io": "^2.2.0"
+  }
+}

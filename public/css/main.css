@@ -1,0 +1,58 @@
+
+
+body {
+  background: rgba(203, 203, 210, 0.15);
+  min-height: 100%;
+}
+html {
+ /* position: relative; */
+  min-height: 100%;
+  /* overflow: hidden; */
+}
+body {
+  margin-bottom: 60px; /* Margin bottom by footer height */
+}
+.container{
+ height: 100%;
+ /* overflow: hidden; */
+}
+canvas {
+  /* background-color: blue; */
+  /* width: auto;
+  height: 30%; */
+}
+
+#home {
+  padding: 50px 0;
+}
+
+#setting {
+  padding: 250px 0;
+}
+
+
+.navbar-time {
+    /* float: left; */
+    padding: 0px;
+    text-align: left;
+    width: 100%;
+}
+
+/* .navbar-brand {
+  float:none;
+} */
+
+.btn-circle.btn-xl {
+    width: 130px;
+    height: 130px;
+    padding: 15px 0px;
+    border-radius: 75px;
+    font-size: 30px;
+    line-height: 1.33;
+    /* background: rgba(203, 203, 210, 0.15); */
+}
+
+.btn:focus,.btn:active {
+
+   border: 15px solid rgba(255, 255, 255, 1);
+}
