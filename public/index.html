@@ -15,12 +15,16 @@
     <!-- Custom styles for this template -->
     <link rel="stylesheet" href="css/main.css" >
     <link rel="stylesheet" href="css/card.css">
+    <link rel="stylesheet" href="css/vue-touch-keyboard.css">
     <link rel="stylesheet" href="bower_components/font-awesome/css/all.min.css">
     <!-- <link href="css/animate.css" rel="stylesheet"> -->
 
+
+    <script src="js/vue-touch-keyboard.js"></script>
     <script src="bower_components/chart.js/dist/Chart.min.js"></script>
     <script src="bower_components/moment/moment.js"></script>
     <script src="bower_components/jquery/dist/jquery.min.js"></script>
+    <script src="https://unpkg.com/vue@2.4.2"></script>
 
     <!-- Plugin JavaScript -->
     <script src="bower_components/jquery-easing/jquery.easing.min.js"></script>
@@ -33,193 +37,176 @@
 
   </head>
   <body data-spy="scroll" data-target=".navbar" data-offset="50">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top" id="mainNav" style="min-height: 7.5%;">
+    <div id="app">
+      <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top" id="mainNav" style="min-height: 7.5%;">
 
-      <a class="navbar-brand navbar-left" href="#">
-        <img src="img/tube.png" width="7%" height="7%" class="d-inline-block align-top" alt="" style="margin-right: 1%;">
-        ATT 1200
-      </a>
+        <a class="navbar-brand navbar-left" href="#">
+          <img src="img/tube.png" width="7%" height="7%" class="d-inline-block align-top" alt="" style="margin-right: 1%;">
+          ATT 1200
+        </a>
 
-      <div class="navbar-time">
-        <a class="navbar-brand" id="nav-time" href="#"></a>
-      </div>
-      <a class="nav-link js-scroll-trigger navbar-right fas fa-home fa-2x" style="color:white" href="#home"> </a>
-      <a class="nav-link js-scroll-trigger navbar-right fas fa-cog fa-2x" style="color:white"  href="#setting"> </a>
-      <!-- <a class="navbar-brand navbar-right" href="#">Intelligent Control Co.,Ltd</a> -->
-
-      <!-- <div class="collapse navbar-collapse" id="navbarResponsive">
-        <ul class="navbar-nav ml-auto">
-          <li class="nav-item active">
-            <a class="nav-link" href="#">Home <span class="sr-only">(current)</span> </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#">About</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#">Services</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#">Contact</a>
-          </li>
-        </ul>
-      </div> -->
-    </nav>
-    <section id="home">
-      <div class="container-fluid ">
-        <div class="row " style="margin-left: 1%; margin-top: 1%; margin-bottom: 1%; max-height: 65%;">
-          <div class="col-xl-2 ">
-            <div class="row" style="margin-top: 8%;">
-              <div class="card border-danger mb-3" style="min-height: 250px; min-width: 200px;" >
-                <div class="card-body text-info text-center">
-                  <h3 class="card-title ">ATT </h3>
-                  <hr>
-                   <i class="fas fa-stop card-status-icon" id="att-status-icon"></i>
-                  <h4 class="card-text " id="att-status-text">Stop</h4>
+        <div class="navbar-time">
+          <a class="navbar-brand" id="nav-time" href="#"></a>
+        </div>
+        <a id="#home-page" class="nav-link js-scroll-trigger navbar-right fas fa-home fa-2x" style="color:white" href="#home"> </a>
+        <a id="setting-page" class="nav-link js-scroll-trigger navbar-right fas fa-cog fa-2x" style="color:white"  href="#setting"> </a>
+      </nav>
+      <section id="home">
+        <div class="container-fluid ">
+          <div class="row " style="margin-left: 1%; margin-top: 1%; margin-bottom: 1%; max-height: 65%;">
+            <div class="col-xl-2 ">
+              <div class="row" style="margin-top: 8%;">
+                <div class="card border-danger mb-3" style="min-height: 250px; min-width: 200px;" >
+                  <div class="card-body text-info text-center">
+                    <h3 class="card-title ">ATT </h3>
+                    <hr>
+                     <i class="fas fa-stop card-status-icon" id="att-status-icon"></i>
+                    <h4 class="card-text " id="att-status-text">Stop</h4>
+                  </div>
                 </div>
               </div>
+              <div class="row">
+                <div class="card border-danger mb-3" style="min-height: 250px; min-width: 200px;" >
+                  <div class="card-body text-danger text-center">
+                    <h3 class="card-title ">Tempus </h3>
+                    <hr>
+                     <i class="fas fa-times card-status-icon" id="tempus-status-icon"></i>
+                    <h4 class="card-text " id="tempus-status-text">Ready</h4>
+                  </div>
+                </div>
+              </div>
+              <!-- <div class="row">
+                <div class="card border-danger mb-3" style="min-height: 210px; min-width: 200px;" >
+                  <div class="card-body text-danger text-center">
+                    <h3 class="card-title ">Time:  </h3>
+                    <hr>
+                     <i class="fas fa-times card-status-icon" id="tempus-status-icon"></i>
+                    <h4 class="card-text " id="tempus-status-text">Shutdown</h4>
+                  </div>
+                </div>
+              </div> -->
             </div>
-            <div class="row">
-              <div class="card border-danger mb-3" style="min-height: 250px; min-width: 200px;" >
-                <div class="card-body text-danger text-center">
-                  <h3 class="card-title ">Tempus </h3>
-                  <hr>
-                   <i class="fas fa-times card-status-icon" id="tempus-status-icon"></i>
-                  <h4 class="card-text " id="tempus-status-text">Ready</h4>
+            <div class="col-xl-6" style="margin-left: 2%;">
+              <div class="row d-flex justify-content-center" style="min-height: 50%;">
+                  <div><canvas id="mychart" width="250" height="250"></canvas></div>
+              </div>
+              <div class="row d-flex justify-content-left" style="min-height: 50%;">
+                <div class="card card-info border-danger mb-3" >
+                  <div class="card-body text-center">
+                    <h1 class="card-title ">Total tube </h1>
+                    <hr>
+                    <h1 class="card-text text-primary" id="total-tube">5000</h1>
+                  </div>
+                </div>
+                <div class="card card-info border-danger mb-3" >
+                  <div class="card-body text-center">
+                    <h1 class="card-title ">Success </h1>
+                    <hr>
+                    <h1 class="card-text text-success" id="success-tube">4900</h1>
+                  </div>
                 </div>
               </div>
+
             </div>
-            <!-- <div class="row">
-              <div class="card border-danger mb-3" style="min-height: 210px; min-width: 200px;" >
-                <div class="card-body text-danger text-center">
-                  <h3 class="card-title ">Time:  </h3>
-                  <hr>
-                   <i class="fas fa-times card-status-icon" id="tempus-status-icon"></i>
-                  <h4 class="card-text " id="tempus-status-text">Shutdown</h4>
-                </div>
-              </div>
-            </div> -->
+
+            <div class="col-xl-3">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Succeeded (ID)</th>
+                    <th>  Time </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>44562412</td>
+                    <td>16:04:01</td>
+                  </tr>
+                  <tr>
+                    <td>44562412</td>
+                    <td>16:04:01</td>
+                  </tr>
+                  <tr>
+                    <td>44562412</td>
+                    <td>16:04:01</td>
+                  </tr>
+                  <tr>
+                    <td>44562412</td>
+                    <td>16:04:01</td>
+                  </tr>
+                  <tr>
+                    <td>44562412</td>
+                    <td>16:04:01</td>
+                  </tr>
+                  <tr>
+                    <td>44562412</td>
+                    <td>16:04:01</td>
+                  </tr>
+                  <tr>
+                    <td>44562412</td>
+                    <td>16:04:01</td>
+                  </tr>
+                  <tr>
+                    <td>44562412</td>
+                    <td>16:04:01</td>
+                  </tr>
+                  <tr>
+                    <td>44562412</td>
+                    <td>16:04:01</td>
+                  </tr>
+                  <tr>
+                    <td>44562412</td>
+                    <td>16:04:01</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
-          <div class="col-xl-6" style="margin-left: 2%;">
-            <div class="row d-flex justify-content-center" style="min-height: 50%;">
-                <div><canvas id="mychart" width="250" height="250"></canvas></div>
-            </div>
-            <div class="row d-flex justify-content-left" style="min-height: 50%;">
-              <div class="card card-info border-danger mb-3" >
-                <div class="card-body text-center">
-                  <h1 class="card-title ">Total tube </h1>
-                  <hr>
-                  <h1 class="card-text text-primary" id="total-tube">5000</h1>
-                </div>
-              </div>
-              <div class="card card-info border-danger mb-3" >
-                <div class="card-body text-center">
-                  <h1 class="card-title ">Success </h1>
-                  <hr>
-                  <h1 class="card-text text-success" id="success-tube">4900</h1>
-                </div>
-              </div>
-            </div>
+          <div class="row" style="margin-top: 1%;">
+            <div class="col-xl-4 d-flex justify-content-center">
+              <button type="button" id="btPlay" class="btn btn-primary btn-circle btn-xl">
+                <i class="fas fa-play fa-lg"></i>
+                <h4>Start</h4>
+              </button>
 
-          </div>
+            </div>
+            <div class="col-xl-4 d-flex justify-content-center">
+              <button type="button" id="btPause" class="btn btn-warning btn-circle btn-xl">
+                <i class="fas fa-pause fa-lg"></i>
+                <h4>Pause</h4>
+              </button>
 
-          <div class="col-xl-3">
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Succeeded (ID)</th>
-                  <th>  Time </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>44562412</td>
-                  <td>16:04:01</td>
-                </tr>
-                <tr>
-                  <td>44562412</td>
-                  <td>16:04:01</td>
-                </tr>
-                <tr>
-                  <td>44562412</td>
-                  <td>16:04:01</td>
-                </tr>
-                <tr>
-                  <td>44562412</td>
-                  <td>16:04:01</td>
-                </tr>
-                <tr>
-                  <td>44562412</td>
-                  <td>16:04:01</td>
-                </tr>
-                <tr>
-                  <td>44562412</td>
-                  <td>16:04:01</td>
-                </tr>
-                <tr>
-                  <td>44562412</td>
-                  <td>16:04:01</td>
-                </tr>
-                <tr>
-                  <td>44562412</td>
-                  <td>16:04:01</td>
-                </tr>
-                <tr>
-                  <td>44562412</td>
-                  <td>16:04:01</td>
-                </tr>
-                <tr>
-                  <td>44562412</td>
-                  <td>16:04:01</td>
-                </tr>
-              </tbody>
-            </table>
+            </div>
+            <div class="col-xl-4 d-flex justify-content-center">
+              <button type="button" id="btStop" class="btn btn-danger btn-circle btn-xl">
+                <i class="fas fa-stop fa-lg"></i>
+                <h4>Stop</h4>
+              </button>
+            </div>
+        </div>
+      </section>
+
+      <section id="setting">
+        <div id="container-setting" class="container">
+          <div class="row">
+            <div class="col-lg-8 mx-auto">
+              <h1 class="text-center" >Searching tube</h1>
+              <!-- <fieldset>
+                <legend>Numeric layout</legend>
+
+              </fieldset> -->
+              <input type="text" placeholder="Enter blood tube ID" @focus="show" data-layout="numeric" onclick="this.value=''"/>
+              <vue-touch-keyboard id="keyboard" v-if="visible" :layout="layout" :cancel="hide" :accept="accept" :input="input" :next="next" />
+            </div>
           </div>
         </div>
-        <div class="row" style="margin-top: 1%;">
-          <div class="col-xl-4 d-flex justify-content-center">
-            <button type="button" id="btPlay" class="btn btn-primary btn-circle btn-xl">
-              <i class="fas fa-play fa-lg"></i>
-              <h4>Start</h4>
-            </button>
-
-          </div>
-          <div class="col-xl-4 d-flex justify-content-center">
-            <button type="button" id="btPause" class="btn btn-warning btn-circle btn-xl">
-              <i class="fas fa-pause fa-lg"></i>
-              <h4>Pause</h4>
-            </button>
-
-          </div>
-          <div class="col-xl-4 d-flex justify-content-center">
-            <button type="button" id="btStop" class="btn btn-danger btn-circle btn-xl">
-              <i class="fas fa-stop fa-lg"></i>
-              <h4>Stop</h4>
-            </button>
-          </div>
-      </div>
-    </section>
-
-    <section id="setting">
-      <div class="container">
-        <div class="row">
-          <div class="col-lg-8 mx-auto">
-            <h2>Setting page</h2>
-            <p class="lead">Demo</p>
-            <ul>
-              <!-- <li>Clickable nav links that smooth scroll to page sections</li>
-              <li>Responsive behavior when clicking nav links perfect for a one page website</li>
-              <li>Bootstrap's scrollspy feature which highlights which section of the page you're on in the navbar</li>
-              <li>Minimal custom CSS so you are free to explore your own unique design options</li>
-            </ul> -->
-          </div>
-        </div>
-      </div>
-    </section>
-
+      </section>
+    </div>
   </body>
 
   <!-- Custom JavaScript for this theme -->
   <script src="js/scrolling-nav.js"></script>
+  <script src="js/vue-keyboard.js"></script>
 
   <script type="text/javascript">
     var chart_canvas = document.getElementById('mychart').getContext('2d');
@@ -287,10 +274,16 @@
 
     });
 
+    $("#home-page").click(function(){
+      console.log("adfaf");
+      vm.hide();
+    });
+
     function chartupdate(){
       // chart.data.labels = timeset;
       chart.data.datasets[0].data = dataset;
       chart.update();
     }
   </script>
+
 </html>

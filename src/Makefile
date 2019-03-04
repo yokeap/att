@@ -8,15 +8,15 @@ CFLAGS += -I. -I.. -std=c11
 ODIR = obj
 
 _DEPS = piControl.h piControlIf.h
-DEPS = $(patsubst %,$(IDIR)/%,$(_SRC))
+DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_OBJ = piControlIf.o
-OBJ = $(patsubst %,$(ODIR)/%,$(_LIB))
+_OBJ = attControl.o piControlIf.o
+OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 $(ODIR)/%.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-piTest: $(OBJ)
+attControl: $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS)
 
 .PHONY: install clean
@@ -30,4 +30,4 @@ install:
 	gzip -9 $(DESTDIR)/usr/share/man/man1/piTest.1
 
 clean:
-	rm -f $(ODIR)/*.o piControlIf.o
+	rm -f $(ODIR)/*.o attControl

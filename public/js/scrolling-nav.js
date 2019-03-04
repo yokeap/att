@@ -10,8 +10,17 @@
         $('html, body').animate({
           scrollTop: (target.offset().top - 56)
         }, 1000, "easeInOutExpo");
-        return false;
+
       }
+
+      // $('html, body').animate({
+      //   scrollTop: ($('#home').offset().top - 56)
+      // }, 1000, "easeInOutExpo");
+      //
+      // $('html, body').animate({
+      //   scrollTop: ($('#setting').offset().top - 300)
+      // }, 1000, "easeInOutExpo");
+      // return false;
     }
   });
 

@@ -1,0 +1,252 @@
+/*!
+*
+* Project: ATT blood automation controller
+*
+* Author: Siwakorn Sukprasertchai
+% License: Intelligent Control Co.,Ltd and Siwakorn Sukprasertchai.
+*
+* Copyright (C) 2019 : Siwakorn Sukprasertchai, Bangkok, Thailand.
+*
+*/
+
+#define _BSD_SOURCE
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <termios.h>
+#include <getopt.h>
+#include <time.h>
+#include <sys/types.h>
+#include <stdbool.h>
+#include <unistd.h>
+#include "piControlIf.h"
+#include "piControl.h"
+
+
+#define I1       0x0001
+#define DC_OK       0x2000
+
+/***********************************************************************************/
+/*!
+* @brief Get message text for read error
+*
+* Get the message text for an error on read from control process.
+*
+* @param[in]   Error number.
+*
+* @return Pointer to the error message
+*
+************************************************************************************/
+char *getReadError(int error)
+{
+	static char *ReadError[] = {
+		"Cannot connect to control process",
+		"Offset seek error",
+		"Cannot read from control process",
+		"Unknown error"
+	};
+	switch (error) {
+		case -1:
+		return ReadError[0];
+		break;
+		case -2:
+		return ReadError[1];
+		break;
+		case -3:
+		return ReadError[2];
+		break;
+		default:
+		return ReadError[3];
+		break;
+	}
+}
+
+/***********************************************************************************/
+/*!
+* @brief Get message text for write error
+*
+* Get the message text for an error on write to control process.
+*
+* @param[in]   Error number.
+*
+* @return Pointer to the error message
+*
+************************************************************************************/
+char *getWriteError(int error)
+{
+	static char *WriteError[] = {
+		"Cannot connect to control process",
+		"Offset seek error",
+		"Cannot write to control process",
+		"Unknown error"
+	};
+	switch (error) {
+		case -1:
+		return WriteError[0];
+		break;
+		case -2:
+		return WriteError[1];
+		break;
+		case -3:
+		return WriteError[2];
+		break;
+		default:
+		return WriteError[3];
+		break;
+	}
+}
+
+/***********************************************************************************/
+/*!
+ * @brief Read data
+ *
+ * Read <length> bytes at a specific offset.
+ *
+ * @param[in]   Offset
+ * @param[in]   Length
+ *
+ ************************************************************************************/
+unsigned int readData(uint16_t offset)
+{
+    int rc;
+    uint8_t *pValues;
+    unsigned int val, retVal;
+
+    // Get memory for the values
+    pValues = malloc(2);
+    if (pValues == NULL) {
+	printf("Not enough memory\n");
+	return 0;
+    }
+
+		rc = piControlRead(offset, 2, pValues);
+		if (rc < 0) {
+			printf("read error %s\n", getReadError(rc));
+		} else {
+			retVal = pValues[1] << 8;
+			retVal = retVal | pValues[0];
+		}
+		return retVal;
+}
+
+
+/***********************************************************************************/
+/*!
+ * @brief Write data to process image
+ *
+ * Write <length> bytes to a specific offset of process image.
+ *
+ * @param[in]   Offset
+ * @param[in]   Length
+ * @param[in]   Value to write
+ *
+ ************************************************************************************/
+void writeData(int offset, int length, unsigned long i32uValue)
+{
+    int rc;
+
+    if (length != 1 && length != 2 && length != 4) {
+	printf("Length must be one of 1|2|4\n");
+	return;
+    }
+    rc = piControlWrite(offset, length, (uint8_t *) & i32uValue);
+    if (rc < 0) {
+	printf("write error %s\n", getWriteError(rc));
+    } else {
+	// printf("Write value %lx hex (=%ld dez) to offset %d.\n", i32uValue, i32uValue, offset);
+    }
+}
+
+void blink()
+{
+	int flag = 0;
+	unsigned int val;
+
+
+	while(1){
+		val = readData(0);
+		// state 1
+		if((val & DC_OK) && (flag == 0)) {
+			flag = 1;
+			writeData(0x46, 2, 0x2000);
+			printf("LED is on");
+			fflush(stdout);
+		}
+		// State 2
+		if((val & I1) && (flag == 1)) {
+			flag = 0;
+			writeData(0x46,2, 0x0000);
+			printf("LED is off");
+			fflush(stdout);
+		}
+		usleep(10000);
+		// printf("address : %d,   value: %d\n", 0x46, 0x2000);
+	}
+}
+
+/***********************************************************************************/
+/*!
+ * @brief Shows help for this program
+ *
+ * @param[in]   Program name
+ *
+ ************************************************************************************/
+void printHelp(char *programname)
+{
+    printf("Usage: %s [OPTION]\n", programname);
+    printf("Options:\n");
+    printf("                 -d: Get device list.\n");
+    printf("\n");
+    printf("      -v <var_name>: Shows infos for a variable.\n");
+    printf("\n");
+}
+
+int main(int argc, char *argv[])
+{
+	char *progname;
+	int function;
+	int c;
+	int rc;
+	bool cyclic = true;     // default is cyclic output
+
+	// checking terminal input command.
+	// ---------------------------------------------------------------------------
+	progname = strrchr(argv[0], '/');
+	if (!progname) {
+		progname = argv[0];
+	} else {
+		progname++;
+	}
+
+	if (!strcmp(progname, "piControlReset")) {
+		rc = piControlReset();
+		if (rc) {
+			printf("Cannot reset: %s\n", strerror(-rc));
+		}
+		return rc;
+	}
+
+	if (argc == 1) {
+		printHelp(progname);
+		return 0;
+	}
+	// ---------------------------------------------------------------------------
+		while ((c = getopt(argc, argv, "sr")) != -1) {
+			switch (c) {
+				case 's':
+				printf("Start");
+				fflush(stdout);
+					blink();
+					//return 0;
+					break;
+
+				case 'r':
+					writeData(0x46,2, 0x0000);
+					printf("Exit");
+					return 0;
+					break;
+			}
+		}
+}
