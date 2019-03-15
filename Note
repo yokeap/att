@@ -11,3 +11,10 @@ sudo service mongodb start
 
  * edit config file
 sudo nano /etc/mongodb.conf
+
+
+* Start Kiosk
+
+DISPLAY=:0 & xset -dpms & xset s off & xset s noblank
+
+DISPLAY=:0 chromium-browser http://localhost:9010 --window-size=1280,800 --enable-webgl --incognito --start-fullscreen --kiosk --noerrdialogs --disable-translate --no-first-run --fast --fast-start --disable-infobars --disable-features=TranslateUI --disk-cache-dir=/dev/null

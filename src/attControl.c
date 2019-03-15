@@ -25,8 +25,38 @@
 #include "piControl.h"
 
 
-#define I1       0x0001
-#define DC_OK       0x2000
+// #define I1       0x0001
+// Define Input
+#define I001  				0x0001
+#define I002			  	0x0002
+#define I003  				0x0004
+#define I004			  	0x0008
+#define I005  				0x0010
+#define I006			  	0x0020
+#define I007  				0x0040
+#define I008			  	0x0080
+#define I009  				0x0100
+#define I010			  	0x0200
+#define I011  				0x0400
+#define I012			  	0x0800
+#define I013  				0x1000
+#define DC_OK       	0x2000
+
+// define output
+#define O001  				0x0001
+#define O002			  	0x0002
+#define O003  				0x0004
+#define O004			  	0x0008
+#define O005  				0x0010
+#define O006			  	0x0020
+#define O007  				0x0040
+#define O008			  	0x0080
+#define O009  				0x0100
+#define O010			  	0x0200
+#define O011  				0x0400
+#define O012			  	0x0800
+#define O013  				0x1000
+#define O014			  	0x2000
 
 /***********************************************************************************/
 /*!
@@ -159,6 +189,22 @@ void writeData(int offset, int length, unsigned long i32uValue)
     }
 }
 
+int process_write(int flag, unsigned int value, int state)
+{
+	if(flag == state){
+		flag = state + 1;
+		writeData(0x46, 2, value);
+		printf("state,A");
+		fflush(stdout);
+		return flag;
+	}
+	else {
+		printf("alarm,unexpected input");
+		writeData(0x46, 2, 0x0000);
+	}
+	return 0;
+}
+
 void blink()
 {
 	int flag = 0;
@@ -167,20 +213,35 @@ void blink()
 
 	while(1){
 		val = readData(0);
-		// state 1
-		if((val & DC_OK) && (flag == 0)) {
-			flag = 1;
-			writeData(0x46, 2, 0x2000);
-			printf("LED is on");
-			fflush(stdout);
-		}
-		// State 2
-		if((val & I1) && (flag == 1)) {
-			flag = 0;
-			writeData(0x46,2, 0x0000);
-			printf("LED is off");
-			fflush(stdout);
-		}
+		if(val & I011) flag = process_write(flag, O003, 1);
+		if(val & I009) flag = process_write(flag, O010 | O011, 2);
+
+		// if(val & I012) flag = process_write(flag, O003, 4);
+		if((val & I013) && (val & I012))  flag = process_write(flag, O005, 3);
+
+		if(val & I007) flag = process_write(flag, O009, 4);
+		if(val & I002) flag = process_write(flag, O001, 5);
+		// if(val & I010) flag = process_write(flag, O001, 5);
+
+		// // state 1
+		// if((val & DC_OK) && (flag == 0)) {
+		// 	if(!flag){
+		// 		flag = 1;
+		// 		writeData(0x46, 2, 0x2000);
+		// 		printf("state : A");
+		// 		fflush(stdout);
+		// 	}
+		// 	else {
+		// 		printf()
+		// 	}
+		// }
+		// // State 2
+		// if((val & I1) && (flag == 1)) {
+		// 	flag = 0;
+		// 	writeData(0x46,2, 0x0000);
+		// 	printf("LED is off");
+		// 	fflush(stdout);
+		// }
 		usleep(10000);
 		// printf("address : %d,   value: %d\n", 0x46, 0x2000);
 	}
