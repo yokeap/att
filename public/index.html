@@ -266,7 +266,7 @@
       //alert( "Handler for .click() called." );
       $("#att-status-icon").attr('class', 'fas fa-pause card-status-icon');
       $("#att-status-text").html("Pause");
-
+      socket.emit('control', 'stop');
     });
 
     $( "#btStop" ).click(function() {

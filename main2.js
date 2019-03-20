@@ -34,8 +34,6 @@ process.on('SIGINT', function() {
   process.exit();
 });
 
-
-
 //do something when app is closing
 process.on('exit', function() {
   child = exec('./src/attControl -r');
@@ -48,17 +46,24 @@ io.on('connection', function(socket) {
 
   socket.on('control', function(msg){
     console.log(msg);
-    var child = exec('./src/attControl -s');
-    child.stdout.on('data', function(data) {
-        console.log('stdout: ' + data);
+    if(msg == "start"){
+      var child = exec('./src/attControl -s');
+      child.stdout.on('data', function(data) {
+          console.log('stdout: ' + data);
 
-    });
-    child.stderr.on('data', function(data) {
-        console.log('stdout: ' + data);
-    });
-    child.on('close', function(code) {
-        console.log('closing code: ' + code);
-    });
+      });
+      child.stderr.on('data', function(data) {
+          console.log('stdout: ' + data);
+      });
+      child.on('close', function(code) {
+          console.log('closing code: ' + code);
+      });
+    }
+
+    if(msg == "stop"){
+      child = exec('./src/attControl -r');
+      console.log('Interrupted');
+    }
   });
 
   socket.on('message', function(){

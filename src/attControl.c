@@ -138,7 +138,7 @@ char *getWriteError(int error)
  * @param[in]   Length
  *
  ************************************************************************************/
-unsigned int readData(uint16_t offset)
+uint16_t readData(uint16_t offset)
 {
     int rc;
     uint8_t *pValues;
@@ -158,7 +158,7 @@ unsigned int readData(uint16_t offset)
 			retVal = pValues[1] << 8;
 			retVal = retVal | pValues[0];
 		}
-		return retVal;
+		return ~retVal;
 }
 
 
@@ -194,7 +194,7 @@ int process_write(int flag, unsigned int value, int state)
 	if(flag == state){
 		flag = state + 1;
 		writeData(0x46, 2, value);
-		printf("state,A");
+		printf("state, %d", state);
 		fflush(stdout);
 		return flag;
 	}
@@ -207,20 +207,73 @@ int process_write(int flag, unsigned int value, int state)
 
 void blink()
 {
-	int flag = 0;
+	int flag = 1;
 	unsigned int val;
-
 
 	while(1){
 		val = readData(0);
-		if(val & I011) flag = process_write(flag, O003, 1);
-		if(val & I009) flag = process_write(flag, O010 | O011, 2);
+		if((val & I011) && (flag == 1)) flag = process_write(flag, O003, 1);
+		if((val & I009) && (flag == 2)) flag = process_write(flag, O010 | O011, 2);
+		// if(val & I009) flag = process_write(flag, O010 | O011, 2);
+		//
+		if((val & I012) && (flag == 3)) flag = process_write(flag, 0x10, 3);
+		if((val & I008) && (flag == 4)) {
+			flag = process_write(flag, O009, 4);
+			//read barcode until Found
+			usleep(5000000);
+			writeData(0x46, 2, 0x0000);				//stop motor
+			val = readData(0);
+			// decoin the state
+			while((val & I002) != I002) {
+				flag = process_write(5, O012|O001 , 5);
+				usleep(5000);
+				val = readData(0);
+			}
+			process_write(5, O001 , 5);
+			while((val & I001) != I001) {
+				flag = process_write(6, O012 | O006 , 6);
+				usleep(5000);
+				val = readData(0);
+			}
+			process_write(6, O001 , 6);
+			// decoin the state
+			while((val & I002) != I002) {
+				flag = process_write(7, O012|O001 , 7);
+				usleep(5000);
+				val = readData(0);
+			}
+			flag = process_write(8, O001 , 8);
+		}
 
-		// if(val & I012) flag = process_write(flag, O003, 4);
-		if((val & I013) && (val & I012))  flag = process_write(flag, O005, 3);
+		if((val & I007) && (flag == 9)) {
+			flag = process_write(flag, 0x0000 , 9);
+			usleep(5000);
+			val = readData(0);
+			while((val & I004) != I004) {
+				flag = process_write(10, O008 | O004 , 10);
+				usleep(5000);
+				val = readData(0);
+			}
+			process_write(10, 0 , 10);
+			while((val & I003) != I003) {
+				flag = process_write(11, O008 , 11);
+				usleep(5000);
+				val = readData(0);
+			}
+			process_write(11, 0 , 11);
+			while((val & I004) != I004) {
+				flag = process_write(12, O008 | O004, 12);
+				usleep(5000);
+				val = readData(0);
+			}
+			flag = process_write(flag, 0, 13);
+			flag = 1;
+		}
 
-		if(val & I007) flag = process_write(flag, O009, 4);
-		if(val & I002) flag = process_write(flag, O001, 5);
+		// if((val & I013) && (val & I012))  flag = process_write(flag, O005, 3);
+		//
+		// if(val & I007) flag = process_write(flag, O009, 4);
+		// if(val & I002) flag = process_write(flag, O001, 5);
 		// if(val & I010) flag = process_write(flag, O001, 5);
 
 		// // state 1
@@ -243,7 +296,8 @@ void blink()
 		// 	fflush(stdout);
 		// }
 		usleep(10000);
-		// printf("address : %d,   value: %d\n", 0x46, 0x2000);
+	  // printf("address : %d,   value: %d\n", 0x46, val & I011);
+		// fflush(stdout);
 	}
 }
 
@@ -299,6 +353,11 @@ int main(int argc, char *argv[])
 				case 's':
 				printf("Start");
 				fflush(stdout);
+				// while(1){
+				// 	printf("val : %x, toggle: %x\n", readData(0), readData(0));
+				// 	fflush(stdout);
+				// 	usleep(1000000);
+				// }
 					blink();
 					//return 0;
 					break;
