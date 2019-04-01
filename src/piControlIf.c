@@ -48,7 +48,7 @@
 
 #include "piControlIf.h"
 
-#include "piControl.h"
+// #include "piControl.h"
 #ifdef KUNBUS_TEST
 #include <IoProtocol.h>
 #endif
@@ -291,7 +291,7 @@ int piControlGetBitValue(SPIValue *pSpiValue)
 
     pSpiValue->i16uAddress += pSpiValue->i8uBit / 8;
     pSpiValue->i8uBit %= 8;
-    
+
     if (ioctl(PiControlHandle_g, KB_GET_VALUE, pSpiValue) < 0)
 	return errno;
 
@@ -318,7 +318,7 @@ int piControlSetBitValue(SPIValue *pSpiValue)
 
     pSpiValue->i16uAddress += pSpiValue->i8uBit / 8;
     pSpiValue->i8uBit %= 8;
-    
+
     if (ioctl(PiControlHandle_g, KB_SET_VALUE, pSpiValue) < 0)
 	return errno;
 
@@ -479,7 +479,7 @@ int piControlSetSerial(int addr, int serial)
     INT32U data[2];
     data[0] = addr;
     data[1] = serial;
-    
+
     piControlOpen();
 
     if (PiControlHandle_g < 0)
@@ -490,6 +490,3 @@ int piControlSetSerial(int addr, int serial)
 }
 
 #endif
-
-
-
