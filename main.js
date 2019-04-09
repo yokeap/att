@@ -1,23 +1,26 @@
 'use strict'
-var  ffi = require('ffi')
-    , SerialPort = require('serialport');
-
-var   tempVal = 0
-    , value = 0
-    , tubeCount = 0
-    , barcodeDelay = 0;
+var   ffi = require('ffi')
+      , express = require('express')
+      , path = require('path')
+      , app = express()
+      , http = require('http').Server(app)
+      , io = require('socket.io')(http)
+      , eventEmitter = require('events').EventEmitter()
+      , tempVal = 0
+      , value = 0
+      , tubeCount = 0
+      , barcodeDelay = 0
+      , flagHomeA = false
+      , flagHomeB = false
+      , flagShootA = false
+      , flagShootB = false
+      , SerialPort = require('serialport');
 
 var lib = ffi.Library('./src/libAttControl', {
     'readData': [ 'int', ['int']],
     'writeData': [ 'void', ['int', 'int', 'int']],
     'process_write': [ 'int', ['int', 'int', 'int']]
 });
-
-var flagHomeA = false
-    , flagHomeB = false
-    , flagShootA = false
-    , flagShootB = false;
-
 
 var I001 = 0x0001
     , I002 = 0x0002
@@ -55,6 +58,23 @@ var M3port = new SerialPort('/dev/ttyUSB0', {
 //parser: SerialPort.parsers.readline('\n'),
 });
 
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, "./")));
+app.use(express.static(path.join(__dirname, "./public/")));
+app.use(express.static(path.join(__dirname, "./public/css")));
+app.use(express.static(path.join(__dirname, "./public/js")));
+app.use(express.static(path.join(__dirname, "./public/bower_components")));
+app.use(express.static(path.join(__dirname, "./public/webcomponents")));
+
+http.listen(9010, function() {
+  console.log('listening on localhost:9010');
+});
+
+app.get('/', function(req, res) {
+    res.sendfile(__dirname + '/public/index.html');
+    //res.send("Hello World");
+});
+
 function writeKunbus(valProcess){
     lib.writeData(70, 2, valProcess);
     console.log(valProcess);
@@ -73,6 +93,10 @@ setInterval(async function(){
     let test = await writeKunbus(valProcess);
     // lib.writeData(70, 2, process());
 }, 10);
+//
+// async function run(){
+//
+// }
 
 function process(){
     // lib.readData(0) = lib.readData(0);
@@ -137,7 +161,7 @@ function process(){
         }
     }
     //tempus shooting process
-    if((lib.readData(0) & I007) && (!flagShootB)) {				//tube shooting rail detected
+    if((lib.readData(0) & I007) && (!flagShootB) && (!flagHomeB)) {				//tube shooting rail detected
         if((~lib.readData(70) & O001) == O001) value ^= O001;				//conveyer-C stop
         if(lib.readData(0) & I013){				//tempus ready
             flagShootB = true;
@@ -146,7 +170,7 @@ function process(){
     }
 
     //shooting-B process
-    if(flagShootB){
+    if(flagShootB && !flagHomeB){
         if((lib.readData(0) & I003) != I003){
             value |= O008;
         }
@@ -167,32 +191,46 @@ function process(){
         if(flagHomeA) flagHomeA = false;
     }
 
-    // if((lib.readData(0) & I002) && (!flagShootB)){
-    //     if((~lib.readData(70) & O012) == O012) value ^= O012;//shooting-A state home position.
-    //     flagHomeA = true;
-    // }
-    // else{
-    //     value |= O012;
-    // }
-
     // Shooting-B Homing
-    if(((lib.readData(0) & I004) != I004) && flagHomeB)	{
-        value |= O008|O004;		//shooting-A state recoil.
-    }
-    else {
-        if(!flagShootB) if((~lib.readData(70) & O008) == O008) value ^= O008;
-        if((~lib.readData(70) & O004) == O004) value ^= O004;
-        if(flagHomeB) flagHomeB = false;
+    if(flagHomeB){
+      if((lib.readData(0) & I004) != I004){
+        value |= O008|O004;		//shooting-B state recoil.
+      }
+      else {
+          if(!flagShootB) if((~lib.readData(70) & O008) == O008) value ^= O008;
+          if((~lib.readData(70) & O004) == O004) value ^= O004;
+          if(flagHomeB) flagHomeB = false;
+      }
     }
 
-    // if((lib.readData(0) & I004) && (!flagShootB)){
-    //     if((~lib.readData(70) & O008) == O008) value ^= O008;
-    //     if((~lib.readData(70) & O004) == O004) value ^= O004;
-    //     flagHomeB = true;
+    // // Shooting-B Homing
+    // if(((lib.readData(0) & I004) != I004) && flagHomeB)	{
+    //     value |= O008|O004;		//shooting-B state recoil.
     // }
-    // else{
-    //     value |= O008|O004;		//shooting-A state recoil.
+    // else {
+    //     if(!flagShootB) if((~lib.readData(70) & O008) == O008) value ^= O008;
+    //     if((~lib.readData(70) & O004) == O004) value ^= O004;
+    //     if(flagHomeB) flagHomeB = false;
     // }
 
     return value;
 }
+
+io.on('connection', function(socket) {
+  console.log('a user connect');
+
+  socket.on('control', function(msg){
+    console.log(msg);
+    if(msg == "start"){
+
+    }
+
+    if(msg == "stop"){
+
+    }
+  });
+
+  socket.on('message', function(){
+
+  });
+});
