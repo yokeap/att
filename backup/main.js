@@ -115,8 +115,6 @@ function process(){
             value ^= O003;				//Conveyer-A deactivate.
         }
     }
-
-    // Vectical Conveyering to barcode reader
     if(lib.readData(0) & I012){				//conveyer-B detected
         if((~lib.readData(70) & O010) == O010) value ^= O010;			//sweeper deactivate.
         if((~lib.readData(70) & O011) == O011) value ^= O011;
@@ -144,6 +142,8 @@ function process(){
 
         -*/
 
+
+
     //shooting-A process
     if(flagShootA){
         value |= O001;				//conveyer-C start
@@ -160,7 +160,6 @@ function process(){
             flagHomeA = true;
         }
     }
-
     //tempus shooting process
     if((lib.readData(0) & I007) && (!flagShootB) && (!flagHomeB)) {				//tube shooting rail detected
         if((~lib.readData(70) & O001) == O001) value ^= O001;				//conveyer-C stop
@@ -192,7 +191,6 @@ function process(){
         if(flagHomeA) flagHomeA = false;
     }
 
-
     // Shooting-B Homing
     if(flagHomeB){
       //shooting-B state recoil until found the sensor I004.
@@ -205,6 +203,16 @@ function process(){
           if(flagHomeB) flagHomeB = false;
       }
     }
+
+    // // Shooting-B Homing
+    // if(((lib.readData(0) & I004) != I004) && flagHomeB)	{
+    //     value |= O008|O004;		//shooting-B state recoil.
+    // }
+    // else {
+    //     if(!flagShootB) if((~lib.readData(70) & O008) == O008) value ^= O008;
+    //     if((~lib.readData(70) & O004) == O004) value ^= O004;
+    //     if(flagHomeB) flagHomeB = false;
+    // }
 
     return value;
 }
