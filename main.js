@@ -10,10 +10,10 @@ var   ffi = require('ffi')
       , value = 0
       , tubeCount = 0
       , barcodeDelay = 0
-      , flagHomeA = false
-      , flagHomeB = false
-      , flagShootA = false
-      , flagShootB = false
+      , flagHomeQR = false
+      , flagHomeTempus = false
+      , flagShootQR = false
+      , flagShootTempus = false
       , SerialPort = require('serialport');
 
 var lib = ffi.Library('./src/libAttControl', {
@@ -22,32 +22,32 @@ var lib = ffi.Library('./src/libAttControl', {
     'process_write': [ 'int', ['int', 'int', 'int']]
 });
 
-var I001 = 0x0001
-    , I002 = 0x0002
-    , I003 = 0x0004
-    , I004 = 0x0008
+var I001 = 0x0001               //QR shooting fired sensor
+    , I002 = 0x0002             //QR shooting homing sensor
+    , I003 = 0x0004             //Tempus shooting fired sensor
+    , I004 = 0x0008             //Tempus shooting homing sensor
     , I005 = 0x0010
     , I006 = 0x0020
-    , I007 = 0x0040
-    , I008 = 0x0080
-    , I009 = 0x0100
+    , I007 = 0x0040             //tempus tray sensor
+    , I008 = 0x0080             //tube barcode sensor
+    , I009 = 0x0100             //Sweeper detect sensor
     , I010 = 0x0200
-    , I011 = 0x0400
-    , I012 = 0x0800
-    , I013 = 0x1000
+    , I011 = 0x0400             //tube entering detect sensor
+    , I012 = 0x0800             //tube conveyering to QR process sensor
+    , I013 = 0x1000             //tempus ready sensor
     , DC_OK = 0x2000
-    , O001 = 0x0001
+    , O001 = 0x0001             //conveyering to tempus motor
     , O002 = 0x0002
-    , O003 = 0x0004
-    , O004 = 0x0008
-    , O005 = 0x0010
-    , O006 = 0x0020
+    , O003 = 0x0004             //tube entering conveyer motor
+    , O004 = 0x0008             //Tempus shooting motor direction
+    , O005 = 0x0010             //tube conveyering QR process motor
+    , O006 = 0x0020             //QR shooting motor direction
     , O007 = 0x0040
-    , O008 = 0x0080
-    , O009 = 0x0100
-    , O010 = 0x0200
-    , O011 = 0x0400
-    , O012 = 0x0800
+    , O008 = 0x0080             //Tempus shooting motor
+    , O009 = 0x0100             //tube QR roller motor
+    , O010 = 0x0200             //sweeper motor run
+    , O011 = 0x0400             //sweeper motor direction
+    , O012 = 0x0800             //QR shooting motor
     , O013 = 0x1000
     , O014 = 0x2000;
 
@@ -99,43 +99,45 @@ setInterval(async function(){
 // }
 
 function process(){
-    // lib.readData(0) = lib.readData(0);
-    // ~lib.readData(70) = ~lib.readData(70);
-    if(lib.readData(0) & I011){				//Sensor-A detected
-        value |= O003;			//Conveyer-A activate
+
+    /*---------------- tube entering ------------------------------*/
+    if(lib.readData(0) & I011){				                                          //tube entering sensor detected
+        value |= O003;			                                                    //tube entering conveyer active
         tubeCount++;
         // console.log("tube: " + tubeCount);
     }
-    if(lib.readData(0) & I009){				//Sweeper-sensor detected
-        value |= O010;			//sweeper activated.
-        value |= O011;
+
+    /*--------------- sweeper routine ----------------------------*/
+    if(lib.readData(0) & I009){				                                          //Sweeper-sensor detected
+        value |= O010;		                                                      //sweeper motor run active.
+        value |= O011;                                                          //sweeper motor direction.
         // printf("%x", ~lib.readData(70));
         // fflush(stdout);
         if((~lib.readData(70) & O003) == O003) {
-            value ^= O003;				//Conveyer-A deactivate.
+            value ^= O003;				                                               //tube entering conveyer deactivate.
         }
     }
 
-    // Vectical Conveyering to barcode reader
-    if(lib.readData(0) & I012){				//conveyer-B detected
-        if((~lib.readData(70) & O010) == O010) value ^= O010;			//sweeper deactivate.
+    /*---------- tube conveyering to QR process -----------------*/
+    if(lib.readData(0) & I012){				                                          //conveyer-B detected
+        if((~lib.readData(70) & O010) == O010) value ^= O010;			              //sweeper run deactivate.
         if((~lib.readData(70) & O011) == O011) value ^= O011;
-        value |= O005;			//conveyer-B activate.
+        value |= O005;			                                                    //tube conveyering to QR motor active.
     }
 
-    // barcode reader process;
-    if((lib.readData(0) & I008) && (!flagShootA)){
-        if((~lib.readData(70) & O005) == O005) value ^= O005;			//conveyer-B deactivate.
-        value |= O009;
-        barcodeDelay++;			//tube rolling
+    /*--------------- barcode reader process -------------------*/
+    if((lib.readData(0) & I008) && (!flagShootQR) && (!flagHomeQR)){                              //tube barcode sensor
+        if((~lib.readData(70) & O005) == O005) value ^= O005;			              //tube conveyering to QR motor deactivate.
+        value |= O009;                                                          //tube QR roller motor
+        barcodeDelay++;			                                                    //start counting (each of tick is 10ms)
         // when cannot read (temporary the fixing is still need.)
-        if(barcodeDelay > 300){								//rolling sensor detected
+        if(barcodeDelay > 300){								                                  //When timeout (3 second)
             barcodeDelay = 0;
-            //if((~lib.readData(70) & O009) == O009) value ^= O009;			//conveyer-B deactivate.
+            if((~lib.readData(70) & O009) == O009) value ^= O009;
             value &= 0xEFFF;			//rolling-B deactivate.
             lib.writeData(70, 2, value);
-            flagShootA = true;
-            flagHomeA = false;
+            flagShootQR = true;                                                  //QR shooting flag is set
+            flagHomeQR = false;                                                  //QR shooting homing is not set
         }
     }
     //when barcode success read
@@ -144,65 +146,66 @@ function process(){
 
         -*/
 
-    //shooting-A process
-    if(flagShootA){
-        value |= O001;				//conveyer-C start
-        // if((~lib.readData(70) & O009) == O009) value ^= O009;			//conveyer-B deactivate.
-        if((lib.readData(0) & I001) != I001){
+    /*-------------------- QR shooting routine -------------------------*/
+    if(flagShootQR && !flagHomeQR){
+        value |= O001;				                                                  //conveyering to tempus motor active
+        // if((~lib.readData(70) & O009) == O009) value ^= O009;
+        if((lib.readData(0) & I001) != I001){                                   //when QR shooting final sensor is not trigged
             //shooting-A activate
-            value |= O012;
-            value |= O006;
+            value |= O012;                                                      //QR shooting motor active
+            value |= O006;                                                      //QR shooting motor direction active
+        }
+        else{                                                                   //when QR shooting final sensor is trigged
+            if((~lib.readData(70) & O012) == O012) value ^= O012;               //QR shooting motor deactive
+            if((~lib.readData(70) & O006) == O006) value ^= O006;               //QR shooting motor direction deactive
+            flagShootQR = false                                                  //QR shooting is not set
+            flagHomeQR = true;                                                   //QR homing is set
+        }
+    }
+
+    /*-------------------- Tempus tray sensor -------------------------*/
+    if((lib.readData(0) & I007) && (!flagShootTempus) && (!flagHomeTempus)) {				      //tempus tray detected
+        if((~lib.readData(70) & O001) == O001) value ^= O001;				            //conveyering to tempus motor deactive
+        if(lib.readData(0) & I013){				                                      //tempus ready sensor
+            flagShootTempus = true;
+            flagHomeTempus = false;
+        }
+    }
+
+    /*--------------------Tempus shooting routine -------------------------*/
+    if(flagShootTempus && !flagHomeTempus){
+        if((lib.readData(0) & I003) != I003){                                   //Tempus shooting fired sensor
+            value |= O008;                                                      //Tempus shooting motor active
         }
         else{
-            if((~lib.readData(70) & O012) == O012) value ^= O012;
-            if((~lib.readData(70) & O006) == O006) value ^= O006;
-            flagShootA = false
-            flagHomeA = true;
+            if((~lib.readData(70) & O008) == O008) value ^= O008;               //Tempus shooting motor deactive
+            flagShootTempus = false;
+            flagHomeTempus = true;
         }
     }
 
-    //tempus shooting process
-    if((lib.readData(0) & I007) && (!flagShootB) && (!flagHomeB)) {				//tube shooting rail detected
-        if((~lib.readData(70) & O001) == O001) value ^= O001;				//conveyer-C stop
-        if(lib.readData(0) & I013){				//tempus ready
-            flagShootB = true;
-            flagHomeB = false;
-        }
+    /*-------------------- QR shooting homing  -------------------------*/
+    if(flagHomeQR){
+      if((lib.readData(0) & I002) != I002)	{                                   //execute until QR shooting homing is detect
+          value |= O012;		                                                    //QR shooting motor active (dir = 0).
+      }
+      else{
+          if(!flagShootQR) if((~lib.readData(70) & O012) == O012) value ^= O012;//shooting-A state home position.
+          if((~lib.readData(70) & O009) == O009) value ^= O009;
+          if(flagHomeQR) flagHomeQR = false;
+      }
     }
 
-    //shooting-B process
-    if(flagShootB && !flagHomeB){
-        if((lib.readData(0) & I003) != I003){
-            value |= O008;
-        }
-        else{
-            if((~lib.readData(70) & O008) == O008) value ^= O008;
-            flagShootB = false;
-            flagHomeB = true;
-        }
-    }
-
-    // Shooting-A Homing
-    if(((lib.readData(0) & I002) != I002) && flagHomeA)	{
-        value |= O012;		//shooting-A state recoil.
-    }
-    else{
-        if(!flagShootA) if((~lib.readData(70) & O012) == O012) value ^= O012;//shooting-A state home position.
-        if((~lib.readData(70) & O009) == O009) value ^= O009;
-        if(flagHomeA) flagHomeA = false;
-    }
-
-
-    // Shooting-B Homing
-    if(flagHomeB){
+    /*-------------------- Tempus shooting homing  ----------------------*/
+    if(flagHomeTempus){
       //shooting-B state recoil until found the sensor I004.
-      if((lib.readData(0) & I004) != I004){
-        value |= O008|O004;
+      if((lib.readData(0) & I004) != I004){                                     //execute until Tempus shooting homing is detect
+        value |= O008|O004;                                                     //Tempus shooting motor is active to home (dir = 1)
       }
       else {
-          if(!flagShootB) if((~lib.readData(70) & O008) == O008) value ^= O008;
+          if(!flagShootTempus) if((~lib.readData(70) & O008) == O008) value ^= O008;
           if((~lib.readData(70) & O004) == O004) value ^= O004;
-          if(flagHomeB) flagHomeB = false;
+          if(flagHomeTempus) flagHomeTempus = false;
       }
     }
 
