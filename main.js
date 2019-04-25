@@ -6,21 +6,41 @@ var   ffi = require('ffi')
       , http = require('http').Server(app)
       , io = require('socket.io')(http)
       , eventEmitter = require('events').EventEmitter()
+      , SerialPort = require('serialport')
+      , mongojs = require('mongojs')
+      , mydb = mongojs('pcldb')
+      , moment = require('moment')
+      // , startDay = moment().format("h:mm:ss");
       , tempVal = 0
       , value = 0
       , tubeCount = 0
       , barcodeDelay = 0
+      , flagQRRead = false
       , flagHomeQR = false
+      , flagHomeReject = false
       , flagHomeTempus = false
+      , flagHomeSweeper = false
       , flagShootQR = false
+      , flagshootReject = false
       , flagShootTempus = false
-      , SerialPort = require('serialport');
+      , flagShootSweeper = false;
 
 var lib = ffi.Library('./src/libAttControl', {
     'readData': [ 'int', ['int']],
     'writeData': [ 'void', ['int', 'int', 'int']],
     'process_write': [ 'int', ['int', 'int', 'int']]
 });
+
+mydb.createCollection("pcl" + moment().format("DMMYYYY"),function (err, res) {
+  if(err){
+    console.log(err);
+  }
+  else{
+    console.log('collection created!');
+  }
+});
+
+var myCollection = mydb.collection("pcl" + moment().format("DMMYYYY"));
 
 var I001 = 0x0001               //QR shooting fired sensor
     , I002 = 0x0002             //QR shooting homing sensor
@@ -108,9 +128,9 @@ function process(){
     }
 
     /*--------------- sweeper routine ----------------------------*/
-    if(lib.readData(0) & I009){				                                          //Sweeper-sensor detected
-        value |= O010;		                                                      //sweeper motor run active.
-        value |= O011;                                                          //sweeper motor direction.
+    if((lib.readData(0) & I009) && (!flagShootSweeper) && (!flagHomeSweeper)){				                                          //Sweeper-sensor detected
+        flagShootSweeper = true;
+        flagHomeSweeper = false;
         // printf("%x", ~lib.readData(70));
         // fflush(stdout);
         if((~lib.readData(70) & O003) == O003) {
@@ -130,14 +150,25 @@ function process(){
         if((~lib.readData(70) & O005) == O005) value ^= O005;			              //tube conveyering to QR motor deactivate.
         value |= O009;                                                          //tube QR roller motor
         barcodeDelay++;			                                                    //start counting (each of tick is 10ms)
+        if(flagQRRead){
+          if((~lib.readData(70) & O009) == O009) value ^= O009;                 //tube rolling deactive
+          flagShootQR = true;
+          flagQRRead = false;
+          flagHomeQR = false;                                                  //QR shooting homing is not set
+        }
         // when cannot read (temporary the fixing is still need.)
+        // if(barcodeDelay > 300){								                                  //When timeout (3 second)
+        //     barcodeDelay = 0;
+        //     if((~lib.readData(70) & O009) == O009) value ^= O009;
+        //     value &= 0xEFFF;			//rolling-B deactivate.
+        //     lib.writeData(70, 2, value);
+        //     flagShootQR = true;                                                  //QR shooting flag is set
+        //     flagHomeQR = false;                                                  //QR shooting homing is not set
+        // }
         if(barcodeDelay > 300){								                                  //When timeout (3 second)
             barcodeDelay = 0;
-            if((~lib.readData(70) & O009) == O009) value ^= O009;
-            value &= 0xEFFF;			//rolling-B deactivate.
-            lib.writeData(70, 2, value);
-            flagShootQR = true;                                                  //QR shooting flag is set
-            flagHomeQR = false;                                                  //QR shooting homing is not set
+            flagShootReject = true;
+            flagHomeReject = false;
         }
     }
     //when barcode success read
@@ -145,6 +176,36 @@ function process(){
     if()
 
         -*/
+
+      /*-------------------- Tempus tray sensor -------------------------*/
+      if((lib.readData(0) & I007) && (!flagShootTempus) && (!flagHomeTempus)) {				      //tempus tray detected
+          if((~lib.readData(70) & O001) == O001) value ^= O001;				            //conveyering to tempus motor deactive
+          if(lib.readData(0) & I013){				                                      //tempus ready sensor
+              flagShootTempus = true;
+              flagHomeTempus = false;
+          }
+      }
+
+
+    /*--------------------sweeper shooting -------------------------------*/
+    if(flagShootSweeper && !flagHomeSweeper){
+      if((lib.readData(113) & I001) != I001){                                   //when sweeper shooting final sensor is not trigged
+          //shooting-A activate
+          value |= O010;		                                                      //sweeper motor run active.
+          value |= O011;                                                          //sweeper motor direction.ss
+      }
+      else{                                                                   //when QR shooting final sensor is trigged
+          if((~lib.readData(183) & O010) == O010) value ^= O010;               //QR shooting motor deactive
+          if((~lib.readData(183) & O011) == O011) value ^= O011;               //QR shooting motor direction deactive
+          flagShootSweeper = false                                                  //QR shooting is not set
+          flagHomeSweeper = true;                                                   //QR homing is set
+      }
+    }
+
+    /*-------------------- Reject shooting Routine---------------------*/
+    if(flagReject && !flagHomeReject){
+
+    }
 
     /*-------------------- QR shooting routine -------------------------*/
     if(flagShootQR && !flagHomeQR){
@@ -160,15 +221,6 @@ function process(){
             if((~lib.readData(70) & O006) == O006) value ^= O006;               //QR shooting motor direction deactive
             flagShootQR = false                                                  //QR shooting is not set
             flagHomeQR = true;                                                   //QR homing is set
-        }
-    }
-
-    /*-------------------- Tempus tray sensor -------------------------*/
-    if((lib.readData(0) & I007) && (!flagShootTempus) && (!flagHomeTempus)) {				      //tempus tray detected
-        if((~lib.readData(70) & O001) == O001) value ^= O001;				            //conveyering to tempus motor deactive
-        if(lib.readData(0) & I013){				                                      //tempus ready sensor
-            flagShootTempus = true;
-            flagHomeTempus = false;
         }
     }
 
@@ -191,22 +243,41 @@ function process(){
       }
       else{
           if(!flagShootQR) if((~lib.readData(70) & O012) == O012) value ^= O012;//shooting-A state home position.
-          if((~lib.readData(70) & O009) == O009) value ^= O009;
+          //if((~lib.readData(70) & O009) == O009) value ^= O009;                 //QR Roller
           if(flagHomeQR) flagHomeQR = false;
       }
     }
 
     /*-------------------- Tempus shooting homing  ----------------------*/
     if(flagHomeTempus){
-      //shooting-B state recoil until found the sensor I004.
       if((lib.readData(0) & I004) != I004){                                     //execute until Tempus shooting homing is detect
         value |= O008|O004;                                                     //Tempus shooting motor is active to home (dir = 1)
       }
       else {
-          if(!flagShootTempus) if((~lib.readData(70) & O008) == O008) value ^= O008;
-          if((~lib.readData(70) & O004) == O004) value ^= O004;
+          if(!flagShootTempus) {
+            if((~lib.readData(70) & O008) == O008) value ^= O008;
+            if((~lib.readData(70) & O004) == O004) value ^= O004;
+          }
           if(flagHomeTempus) flagHomeTempus = false;
       }
+    }
+
+    /*-------------------- Sweeper shooting homing  ----------------------*/
+    if(flagHomeSweeper){
+      if((lib.readData(113) & I002) != I002){                                     //execute until sweeper shooting homing is detect
+        value |= O011;                                                            //Sweeper motor active
+      }
+      else {
+          if(!flagShootSweeper) {
+            if((~lib.readData(70) & O012) == O012) value ^= O012;                ////Sweeper motor deactive
+            if((~lib.readData(70) & O004) == O004) value ^= O004;
+        }
+          if(flagHomeSweeper) flagHomeSweeper = false;
+      }
+    }
+
+    if(flagHomeReject){
+
     }
 
     return value;
@@ -230,3 +301,25 @@ io.on('connection', function(socket) {
 
   });
 });
+
+console.log(moment().endOf('day').fromNow());
+
+setInterval(function(){
+  // var numbers = moment().endOf('day').fromNow().match(/\d+/g).map(Number);
+  // if(numbers[0] < 1) {
+  //   console.log('creat new day database');
+  // }
+  if(moment().endOf('day').fromNow() == "in a few seconds"){
+    console.log('creat new day database');
+    mydb.createCollection("pcl" + moment().format("DMMYYYY"),function (err, res) {
+      if(err){
+        console.log(err);
+      }
+      else{
+        console.log('collection created!');
+      }
+    });
+
+    myCollection = mydb.collection("pcl" + moment().format("DMMYYYY"));
+  }
+}, 60000);

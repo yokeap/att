@@ -19,6 +19,8 @@
   "dependencies": {
     "bower": "^1.8.8",
     "express": "^4.16.4",
+    "moment": "^2.24.0",
+    "mongojs": "^2.6.0",
     "promise": "^8.0.2",
     "socket.io": "^2.2.0"
   }

@@ -1,18 +1,20 @@
-{
-  "name": "public",
+bo{
+  "name": "attInterface",
   "homepage": "https://github.com/yokeap/att",
   "authors": [
     "Siwakorn Sukprasertchai <siwakorn.ictrl@gmail.com>"
   ],
-  "description": "blood tube automation ui",
+  "description": "",
   "main": "index.html",
   "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
   "dependencies": {
-    "jquery": "^3.3.1",
-    "bootstrap": "^4.2.1",
-    "font-awesome": "^5.6.3",
-    "chart.js": "^2.7.3",
-    "moment": "^2.24.0",
-    "jquery-easing": "*"
+    "moment": "^2.24.0"
   }
 }
