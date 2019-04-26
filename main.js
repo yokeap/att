@@ -192,18 +192,16 @@ function process(){
       if((lib.readData(113) & I001) != I001){                                   //when sweeper shooting final sensor is not trigged
           //shooting-A activate
           value |= O010;		                                                      //sweeper motor run active.
-          value |= O011;                                                          //sweeper motor direction.ss
       }
       else{                                                                   //when QR shooting final sensor is trigged
           if((~lib.readData(183) & O010) == O010) value ^= O010;               //QR shooting motor deactive
-          if((~lib.readData(183) & O011) == O011) value ^= O011;               //QR shooting motor direction deactive
           flagShootSweeper = false                                                  //QR shooting is not set
           flagHomeSweeper = true;                                                   //QR homing is set
       }
     }
 
     /*-------------------- Reject shooting Routine---------------------*/
-    if(flagReject && !flagHomeReject){
+    if(flagshootReject && !flagHomeReject){
 
     }
 
@@ -265,12 +263,13 @@ function process(){
     /*-------------------- Sweeper shooting homing  ----------------------*/
     if(flagHomeSweeper){
       if((lib.readData(113) & I002) != I002){                                     //execute until sweeper shooting homing is detect
-        value |= O011;                                                            //Sweeper motor active
+        value |= O010;		                                                      //sweeper motor run active.
+        value |= O013;                                                          //sweeper motor direction.ss
       }
       else {
           if(!flagShootSweeper) {
-            if((~lib.readData(70) & O012) == O012) value ^= O012;                ////Sweeper motor deactive
-            if((~lib.readData(70) & O004) == O004) value ^= O004;
+            if((~lib.readData(70) & O010) == O010) value ^= O010;               //QR shooting motor deactive
+            if((~lib.readData(70) & O013) == O013) value ^= O013;               //QR shooting motor direction deactive
         }
           if(flagHomeSweeper) flagHomeSweeper = false;
       }
