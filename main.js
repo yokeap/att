@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 'use strict'
 var   ffi = require('ffi')
       , express = require('express')
@@ -322,3 +323,73 @@ setInterval(function(){
     myCollection = mydb.collection("pcl" + moment().format("DMMYYYY"));
   }
 }, 60000);
+=======
+'use strict'
+var   express = require('express')
+      , path = require('path')
+      , app = express()
+      , http = require('http').Server(app)
+      , io = require('socket.io')(http)
+      , eventEmitter = require('events').EventEmitter()
+      , tempVal = 0
+      , value = 0
+      , tubeCount = 0
+      , barcodeDelay = 0
+      , flagHomeQR = false
+      , flagHomeTempus = false
+      , flagShootQR = false
+      , flagShootTempus = false
+      , SerialPort = require('serialport');
+
+var M3port = new SerialPort('/dev/ttyUSB0', {
+    autoOpen: false,
+    baudRate: 9600,
+    highWaterMark: 65535
+//parser: SerialPort.parsers.readline('\n'),
+});
+
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, "./")));
+app.use(express.static(path.join(__dirname, "./public/")));
+app.use(express.static(path.join(__dirname, "./public/css")));
+app.use(express.static(path.join(__dirname, "./public/js")));
+app.use(express.static(path.join(__dirname, "./public/bower_components")));
+app.use(express.static(path.join(__dirname, "./public/webcomponents")));
+
+http.listen(9010, function() {
+  console.log('listening on localhost:9010');
+});
+
+app.get('/', function(req, res) {
+    res.sendfile(__dirname + '/public/index.html');
+    //res.send("Hello World");
+});
+
+// setInterval(async function(){
+//     // let valKunbus = readKunbus();
+//     // let valProcess = process(lib.readData(0), ~lib.readData(70));
+//     let valProcess = await process();
+//     let test = await writeKunbus(valProcess);
+//     // lib.writeData(70, 2, process());
+// }, 10);
+//
+
+io.on('connection', function(socket) {
+  console.log('a user connect');
+
+  socket.on('control', function(msg){
+    console.log(msg);
+    if(msg == "start"){
+
+    }
+
+    if(msg == "pause"){
+
+    }
+  });
+
+  socket.on('message', function(){
+
+  });
+});
+>>>>>>> Stashed changes
